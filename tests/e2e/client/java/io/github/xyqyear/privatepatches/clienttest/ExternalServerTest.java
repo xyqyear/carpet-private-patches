@@ -25,17 +25,22 @@ public final class ExternalServerTest implements FabricClientGameTest {
             context.runOnClient(client -> ConnectScreen.startConnecting(client.gui.screen(), client,
                     ServerAddress.parseString(address), new ServerData("Private Patches E2E", address, ServerData.Type.OTHER),
                     false, null));
-            context.waitFor(client -> client.level != null && client.player != null && client.getConnection() != null, 6000);
+            context.waitFor(client -> client.level != null && client.player != null
+                    && client.getConnection() != null && client.gui.screen() == null, 6000);
             context.waitTicks(100);
             if (i == 0) {
                 context.runOnClient(client -> client.getConnection().sendCommand("ppe2e nether"));
-                context.waitFor(client -> client.level != null && client.level.dimension().equals(Level.NETHER), 6000);
+                context.waitFor(client -> client.level != null && client.level.dimension().equals(Level.NETHER)
+                        && client.gui.screen() == null, 6000);
                 context.runOnClient(client -> client.getConnection().sendCommand("ppe2e overworld"));
-                context.waitFor(client -> client.level != null && client.level.dimension().equals(Level.OVERWORLD), 6000);
+                context.waitFor(client -> client.level != null && client.level.dimension().equals(Level.OVERWORLD)
+                        && client.gui.screen() == null, 6000);
+                context.waitTicks(20);
                 context.runOnClient(client -> client.getConnection().sendCommand("ppe2e respawn"));
                 context.waitFor(client -> client.player != null && client.player.isDeadOrDying(), 6000);
                 context.runOnClient(client -> client.player.respawn());
-                context.waitFor(client -> client.player != null && !client.player.isDeadOrDying(), 6000);
+                context.waitFor(client -> client.player != null && !client.player.isDeadOrDying()
+                        && client.gui.screen() == null, 6000);
             }
             if (i == 2) {
                 context.runOnClient(client -> client.getConnection().sendCommand("ppe2e done"));

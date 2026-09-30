@@ -159,6 +159,7 @@ def main():
     (run_dir / "eula.txt").write_text("eula=true\n")
     properties = {
         "server-ip": "127.0.0.1", "server-port": unused_port(), "online-mode": "false",
+        "white-list": "false", "enforce-whitelist": "false",
         "enforce-secure-profile": "false", "level-type": "minecraft:flat", "level-seed": 1,
         "generate-structures": "false", "spawn-protection": 0, "view-distance": 2,
         "simulation-distance": 2, "sync-chunk-writes": "false", "allow-flight": "true",
