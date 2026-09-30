@@ -1,0 +1,6 @@
+{
+  "privatepatches.category.bugfix": "bugfix",
+  "privatepatches.rule.playerRetentionMemoryLeakFix.desc": "Release disconnected Carpet players from Fabric networking and remove stale player references from loaded maps.",
+  "privatepatches.rule.playerRetentionMemoryLeakFix.extra.0": "Also cleans map references to removed ordinary players. Map cleanup runs every 100 server ticks.",
+  "privatepatches.rule.playerRetentionMemoryLeakFix.extra.1": "Enabling protects subsequent disconnects, including currently online fake players. Network references leaked while disabled need a restart."
+}

@@ -1,0 +1,6 @@
+{
+  "privatepatches.category.bugfix": "漏洞修复",
+  "privatepatches.rule.playerRetentionMemoryLeakFix.desc": "释放退出的 Carpet 假玩家网络记录，并清理已加载地图中的失效玩家引用。",
+  "privatepatches.rule.playerRetentionMemoryLeakFix.extra.0": "地图清理也覆盖普通玩家，每 100 个服务端 tick 执行一次。",
+  "privatepatches.rule.playerRetentionMemoryLeakFix.extra.1": "开启后保护后续退出的假玩家，包括当前在线实例；关闭期间已经泄漏的网络记录需要重启释放。"
+}

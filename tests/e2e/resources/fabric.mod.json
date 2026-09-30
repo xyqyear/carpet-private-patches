@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "privatepatches_e2e",
+  "version": "1.0.0",
+  "name": "Private Patches Server Regression Tests",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["io.github.xyqyear.privatepatches.e2e.DedicatedServerChecks"]
+  },
+  "mixins": ["privatepatches-e2e.mixins.json"],
+  "depends": {"privatepatches": "*", "fabric-api": "*"}
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "privatepatches_client_e2e",
+  "version": "1.0.0",
+  "name": "Private Patches External Client Tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["io.github.xyqyear.privatepatches.clienttest.ExternalServerTest"]
+  },
+  "depends": {"fabric-api": "*", "fabric-client-gametest-api-v1": "*"}
+}

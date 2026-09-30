@@ -1,0 +1,122 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = 'io.github.xyqyear'
+
+def targetVersion = providers.gradleProperty('mcVersion').getOrElse('26.2')
+def target = new Properties()
+file("versions/${targetVersion}.properties").withInputStream { target.load(it) }
+
+repositories {
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${target.minecraft}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${target.fabric_api}"
+    implementation "maven.modrinth:carpet:${target.carpet_artifact}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
+}
+
+sourceSets {
+    test.java.srcDirs = ['tests/unit/java']
+    e2e {
+        java.srcDirs = ['tests/e2e/java']
+        resources.srcDirs = ['tests/e2e/resources']
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+    clientE2e {
+        java.srcDirs = ['tests/e2e/client/java']
+        resources.srcDirs = ['tests/e2e/client/resources']
+        compileClasspath += sourceSets.main.compileClasspath
+    }
+}
+
+configurations {
+    e2eImplementation.extendsFrom implementation
+    e2eRuntimeOnly.extendsFrom runtimeOnly
+    clientE2eImplementation.extendsFrom implementation
+    clientTestMods
+}
+
+dependencies {
+    clientTestMods("net.fabricmc.fabric-api:fabric-api:${target.fabric_api}") { transitive = false }
+    clientTestMods(fabricApi.module('fabric-client-gametest-api-v1', target.fabric_api)) { transitive = false }
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+jar {
+    archiveFileName = "${project.name}-${project.version}+mc26.2-26.3.jar"
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'repositoryRoot', projectDir.absolutePath
+}
+
+tasks.register('e2eJar', Jar) {
+    dependsOn e2eClasses
+    from sourceSets.e2e.output
+    archiveFileName = "privatepatches-e2e-mc${targetVersion}.jar"
+}
+
+tasks.register('clientE2eJar', Jar) {
+    dependsOn clientE2eClasses
+    from sourceSets.clientE2e.output
+    archiveFileName = "privatepatches-client-e2e-mc${targetVersion}.jar"
+}
+
+tasks.register('runClientE2e', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    dependsOn clientE2eJar
+    mods.setFrom(tasks.clientE2eJar, configurations.clientTestMods)
+    runDir = layout.buildDirectory.dir("e2e-client-run-${targetVersion}")
+    useXVFB = true
+    jvmArgs.addAll('-Xmx2G', '-XX:ActiveProcessorCount=2', '-Dfabric.client.gametest',
+            '-Dfabric.client.gametest.disableNetworkSynchronizer=true')
+    jvmArgs.add(providers.gradleProperty('e2eAddress').map { "-Dprivatepatches.e2e.address=${it}" }
+            .getOrElse('-Dprivatepatches.e2e.address=127.0.0.1:25565'))
+    jvmArgs.add(providers.gradleProperty('clientReport').map { "-Dprivatepatches.e2e.clientReport=${it}" }
+            .getOrElse('-Dprivatepatches.e2e.clientReport=client-result.json'))
+    programArgs.addAll('--username', 'PPClient', '--version', targetVersion, '--accessToken', '0')
+}
+
+tasks.register('verifyReleaseJar') {
+    dependsOn jar
+    inputs.file tasks.jar.archiveFile
+    doLast {
+        def entries = zipTree(tasks.jar.archiveFile.get().asFile)
+        if (!entries.matching { include '**/e2e/**', '**/*Test*', '*e2e*' }.isEmpty()) {
+            throw new GradleException('Test classes or resources leaked into the release JAR')
+        }
+    }
+}
+
+check.dependsOn verifyReleaseJar

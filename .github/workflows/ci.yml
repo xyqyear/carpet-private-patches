@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+      - run: ./gradlew check --console=plain
+      - name: Freeze release candidate
+        run: |
+          mkdir -p build/release-candidate
+          cp build/libs/*+mc26.2-26.3.jar build/release-candidate/
+          cd build/release-candidate
+          sha256sum -- *.jar > SHA256SUMS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: release-candidate
+          path: build/release-candidate/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: unit-results
+          path: build/test-results/test/
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - mc: '26.2'
+            profile: minimal
+          - mc: '26.2'
+            profile: lithium
+          - mc: '26.2'
+            profile: production-mods
+          - mc: '26.3'
+            profile: minimal
+          - mc: '26.3'
+            profile: lithium
+    env:
+      EULA: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: release-candidate
+          path: build/release-candidate
+      - name: Verify candidate and compile test mod
+        env:
+          MC_VERSION: ${{ matrix.mc }}
+        run: |
+          (cd build/release-candidate && sha256sum --check SHA256SUMS)
+          ./gradlew e2eJar -PmcVersion="$MC_VERSION" --console=plain
+      - name: Run dedicated server regressions
+        env:
+          MC_VERSION: ${{ matrix.mc }}
+          PROFILE: ${{ matrix.profile }}
+          CYCLES: ${{ inputs.release && 1000 || 100 }}
+        run: |
+          uv run --locked --project tests/e2e tests/e2e/run.py \
+            --mc "$MC_VERSION" --profile "$PROFILE" --cycles "$CYCLES" \
+            --jar build/release-candidate/*+mc26.2-26.3.jar
+      - name: Install virtual display
+        if: inputs.release && matrix.profile == 'minimal'
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libopenal1
+      - name: Run real client against dedicated server
+        if: inputs.release && matrix.profile == 'minimal'
+        env:
+          MC_VERSION: ${{ matrix.mc }}
+        run: |
+          uv run --locked --project tests/e2e tests/e2e/run.py \
+            --mc "$MC_VERSION" --profile minimal --client \
+            --jar build/release-candidate/*+mc26.2-26.3.jar
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: results-${{ matrix.mc }}-${{ matrix.profile }}
+          path: |
+            build/e2e/**/result.json
+            build/e2e/**/regression.json
+            build/e2e/**/persistence.json
+            build/e2e/**/client.json
+            build/e2e/**/client-result.json
+            build/e2e/**/*.xml
+            build/e2e/**/*.log
+            build/e2e-client-run-*/logs/*.log
+          if-no-files-found: warn

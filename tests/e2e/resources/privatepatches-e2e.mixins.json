@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "io.github.xyqyear.privatepatches.e2e.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": ["RegistryProbe"],
+  "injectors": {"defaultRequire": 1}
+}

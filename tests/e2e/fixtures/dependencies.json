@@ -1,0 +1,120 @@
+{
+  "loader": "0.19.5",
+  "installer": "1.1.2",
+  "launchers": {
+    "26.2": {
+      "url": "https://meta.fabricmc.net/v2/versions/loader/26.2/0.19.5/1.1.2/server/jar",
+      "sha256": "f1d2bafd0b3b97630b0cdd8e890cd102db3dbe60877a38a5c813aa929e691127"
+    },
+    "26.3": {
+      "url": "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar",
+      "sha256": "0b56ad54d762172e8b8748e467f584f071e4dedecd93dc336cf2c68837e790be"
+    }
+  },
+  "profiles": {
+    "26.2": {
+      "minimal": [
+        {
+          "filename": "fabric-api-0.161.0+26.2.jar",
+          "version": "0.161.0+26.2",
+          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/ewUK83HI/fabric-api-0.161.0%2B26.2.jar",
+          "sha512": "2502fa5ade78e9a120b3747bc1a9a2167d6671743bea45bf115d3174c94121aeda87c549446d1a604a9c11fb828de17a551e3514ce42f3e93069dd14bdaee55b"
+        },
+        {
+          "filename": "fabric-carpet-26.2+v260616.jar",
+          "version": "26.2",
+          "url": "https://cdn.modrinth.com/data/TQTTVgYE/versions/bGrLxJ8v/fabric-carpet-26.2%2Bv260616.jar",
+          "sha512": "8b8fac6979bd3153f5cfb4faa6bab52e1357eab814492a6658f3c0e1ac2856ad37a626c0a03a0839c39abb7bf56661f77b09d05d10ac01173bcdd373a33c6265"
+        }
+      ],
+      "lithium": [
+        {
+          "filename": "fabric-api-0.161.0+26.2.jar",
+          "version": "0.161.0+26.2",
+          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/ewUK83HI/fabric-api-0.161.0%2B26.2.jar",
+          "sha512": "2502fa5ade78e9a120b3747bc1a9a2167d6671743bea45bf115d3174c94121aeda87c549446d1a604a9c11fb828de17a551e3514ce42f3e93069dd14bdaee55b"
+        },
+        {
+          "filename": "fabric-carpet-26.2+v260616.jar",
+          "version": "26.2",
+          "url": "https://cdn.modrinth.com/data/TQTTVgYE/versions/bGrLxJ8v/fabric-carpet-26.2%2Bv260616.jar",
+          "sha512": "8b8fac6979bd3153f5cfb4faa6bab52e1357eab814492a6658f3c0e1ac2856ad37a626c0a03a0839c39abb7bf56661f77b09d05d10ac01173bcdd373a33c6265"
+        },
+        {
+          "filename": "lithium-fabric-0.25.3+mc26.2.jar",
+          "version": "mc26.2-0.25.3-fabric",
+          "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/f7vZ0VWU/lithium-fabric-0.25.3%2Bmc26.2.jar",
+          "sha512": "148b638f3c6229fbaf487120a2344a0af5e411a5aa6533d5db9d75da0a8c0d8304f63eb4cca13f4d03b2c9b4c23d559dd74c1d832422ef8a3087bd005e62a8bd"
+        }
+      ],
+      "production-mods": [
+        {
+          "filename": "fabric-api-0.155.2+26.2.jar",
+          "version": "0.155.2+26.2",
+          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/lVXlbH4w/fabric-api-0.155.2%2B26.2.jar",
+          "sha512": "cc56984378a27c5bcd56374d6ffbb27a45c6bf3355add2ac6be9817ccac5854362249bf9d0147eb271a70fda2716129204e240d53c9aa876a2a7861f4c7f880f"
+        },
+        {
+          "filename": "fabric-carpet-26.2+v260616.jar",
+          "version": "26.2",
+          "url": "https://cdn.modrinth.com/data/TQTTVgYE/versions/bGrLxJ8v/fabric-carpet-26.2%2Bv260616.jar",
+          "sha512": "8b8fac6979bd3153f5cfb4faa6bab52e1357eab814492a6658f3c0e1ac2856ad37a626c0a03a0839c39abb7bf56661f77b09d05d10ac01173bcdd373a33c6265"
+        },
+        {
+          "filename": "lithium-fabric-0.25.2+mc26.2.jar",
+          "version": "mc26.2-0.25.2-fabric",
+          "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/UPNexAfy/lithium-fabric-0.25.2%2Bmc26.2.jar",
+          "sha512": "db676376c05b7e912cdae5aad9e51f125adc1554ae2b204599ccb598751921aedbac98e97b9cba0333b6b52488c6b75c915a7dbd50436f97800387fe1aad1c50"
+        },
+        {
+          "filename": "carpet-tis-addition-v1.82.3-mc26.2.jar",
+          "version": "v1.82.3-mc26.2",
+          "url": "https://cdn.modrinth.com/data/jE0SjGuf/versions/daCrSdc6/carpet-tis-addition-v1.82.3-mc26.2.jar",
+          "sha512": "49f63b989e157d3d0bf465d8923418c66789a75c10d8b2574c125656f70a75433600ce7eba913e5c643c1a76d3a6039e3d759fecc7af3da7340339e9cef0d3f5"
+        },
+        {
+          "filename": "carpet-igny-addition-v1.18.0-mc26.2.jar",
+          "version": "v1.18.0-mc26.2",
+          "url": "https://cdn.modrinth.com/data/7PCm6yD1/versions/2R6QG812/carpet-igny-addition-v1.18.0-mc26.2.jar",
+          "sha512": "7796149747156c3287f4c6a1fdb596a7cf476c8bbd231277c3aa5c223861aa16d51f95511a8d62fe9de11c3443074c36149ddc9a546ba6c1f0899e294ad0b680"
+        }
+      ]
+    },
+    "26.3": {
+      "minimal": [
+        {
+          "filename": "fabric-api-0.161.0+26.3.jar",
+          "version": "0.161.0+26.3",
+          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/bNnaTiuM/fabric-api-0.161.0%2B26.3.jar",
+          "sha512": "ed6b2586d6fde11fde8472f5a527c51e99b67026e46f94d4bfd85e7e28ce5ee299173ee16ad576ceb51f39f98d30a811086a6deb1a86a524859cc16e12da109d"
+        },
+        {
+          "filename": "fabric-carpet-26.3+v260915.jar",
+          "version": "26.3",
+          "url": "https://cdn.modrinth.com/data/TQTTVgYE/versions/yt9oDFOj/fabric-carpet-26.3%2Bv260915.jar",
+          "sha512": "7a479ba69eb5049cb94365d5044bd58c9f970c50b3484861fe3675f1917f7c99c1b1f50a5e01bdd9ded940d76a995539009a3656e05be2f513f20ec14de991a7"
+        }
+      ],
+      "lithium": [
+        {
+          "filename": "fabric-api-0.161.0+26.3.jar",
+          "version": "0.161.0+26.3",
+          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/bNnaTiuM/fabric-api-0.161.0%2B26.3.jar",
+          "sha512": "ed6b2586d6fde11fde8472f5a527c51e99b67026e46f94d4bfd85e7e28ce5ee299173ee16ad576ceb51f39f98d30a811086a6deb1a86a524859cc16e12da109d"
+        },
+        {
+          "filename": "fabric-carpet-26.3+v260915.jar",
+          "version": "26.3",
+          "url": "https://cdn.modrinth.com/data/TQTTVgYE/versions/yt9oDFOj/fabric-carpet-26.3%2Bv260915.jar",
+          "sha512": "7a479ba69eb5049cb94365d5044bd58c9f970c50b3484861fe3675f1917f7c99c1b1f50a5e01bdd9ded940d76a995539009a3656e05be2f513f20ec14de991a7"
+        },
+        {
+          "filename": "lithium-fabric-0.26.2+mc26.3.jar",
+          "version": "mc26.3-0.26.2-fabric",
+          "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/xS0Q8LSi/lithium-fabric-0.26.2%2Bmc26.3.jar",
+          "sha512": "4d7fee66132eedc71feab9390b92c95d7058edbdad0fecfac1d836a2950b97a7ca463afbede61c7ef361ce65e1f927ab9e89dde5bf2e0e0ce486afb5c5dbee40"
+        }
+      ]
+    }
+  }
+}
