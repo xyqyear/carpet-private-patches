@@ -95,7 +95,7 @@ jobs:
             --jar build/release-candidate/*+mc26.2-26.3.jar
       - name: Install virtual display
         if: inputs.release && matrix.profile == 'minimal'
-        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libopenal1
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 libopenal1
       - name: Run real client against dedicated server
         if: inputs.release && matrix.profile == 'minimal'
         env:

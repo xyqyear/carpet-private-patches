@@ -94,15 +94,25 @@ def launch(args, run_dir, launcher, mode):
                         raise RuntimeError(f"Dedicated server did not become ready; see {log_path}")
                     time.sleep(0.25)
                 port = json.loads(ready.read_text())["port"]
+                print(f"Starting real client; log: {run_dir / 'client-process.log'}", flush=True)
                 with (run_dir / "client-process.log").open("w") as client_log:
-                    client_environment = dict(os.environ, LIBGL_ALWAYS_SOFTWARE="true", GALLIUM_DRIVER="llvmpipe")
+                    client_environment = dict(os.environ, LIBGL_ALWAYS_SOFTWARE="true", GALLIUM_DRIVER="llvmpipe",
+                                              SDL_VIDEO_FORCE_EGL="1")
                     client = subprocess.Popen([
                         str(ROOT / "gradlew"), "--no-daemon", "runClientE2e", f"-PmcVersion={args.mc}",
                         f"-Pe2eAddress=127.0.0.1:{port}", f"-PclientReport={run_dir / 'client-result.json'}",
                         "--console=plain"], cwd=ROOT, stdout=client_log, stderr=subprocess.STDOUT,
                         start_new_session=True, env=client_environment)
                     try:
-                        client.wait(timeout=args.timeout)
+                        deadline = time.monotonic() + args.timeout
+                        while client.poll() is None:
+                            if report_path.exists() and not json.loads(report_path.read_text()).get("passed"):
+                                raise RuntimeError(f"Dedicated server regression failed; see {log_path}")
+                            if process.poll() is not None and not report_path.exists():
+                                raise RuntimeError(f"Dedicated server exited without a report; see {log_path}")
+                            if time.monotonic() > deadline:
+                                raise RuntimeError(f"Client timed out; see {run_dir / 'client-process.log'}")
+                            time.sleep(0.25)
                     finally:
                         stop_process(client)
                     if client.returncode != 0 or not (run_dir / "client-result.json").exists():
