@@ -56,12 +56,14 @@ Carpet 的退出回调位于监听器 `onDisconnect()` 的入口，所以也覆�
 ## 开关与边界
 
 ```text
-/privatepatches playerRetentionMemoryLeakFix true
-/privatepatches setDefault playerRetentionMemoryLeakFix true
-/privatepatches playerRetentionMemoryLeakFix false
+/carpet playerRetentionMemoryLeakFix true
+/carpet setDefault playerRetentionMemoryLeakFix true
+/carpet playerRetentionMemoryLeakFix false
 ```
 
-`setDefault` 写入世界目录的 `privatepatches.conf`。
+`setDefault` 写入世界目录的 `carpet.conf`。
+
+从 0.2.0 或更早版本升级时，旧 `privatepatches.conf` 不会自动导入；请用上述命令按原值重新保存开关。
 
 - 开启后，已经在线的假玩家在后续退出时也会释放网络记录。
 - 地图清理每 100 tick 执行一次，正常 TPS 下约 5 秒；低 TPS 时更久。

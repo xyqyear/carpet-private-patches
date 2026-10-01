@@ -5,10 +5,10 @@ Run local tests in **WSL**, from a native Linux build directory, with Java 25, `
 ```bash
 ./gradlew check e2eJar
 mkdir -p build/release-candidate
-cp build/libs/carpet-private-patches-0.2.0+mc26.2-26.3.jar build/release-candidate/
+cp build/libs/carpet-private-patches-0.2.1+mc26.2-26.3.jar build/release-candidate/
 EULA=true uv run --locked --project tests/e2e tests/e2e/run.py \
   --mc 26.2 --profile minimal --cycles 1000 \
-  --jar build/release-candidate/carpet-private-patches-0.2.0+mc26.2-26.3.jar
+  --jar build/release-candidate/carpet-private-patches-0.2.1+mc26.2-26.3.jar
 ```
 
 Set `EULA=true` after accepting the [Minecraft EULA](https://aka.ms/MinecraftEULA). The runner downloads hash-checked fixtures and uses isolated worlds bound to localhost, offline login, small view distances and the official Fabric launcher.
@@ -19,7 +19,7 @@ For Minecraft 26.3, compile the **test Mod** against that version, then pass the
 ./gradlew e2eJar -PmcVersion=26.3
 EULA=true uv run --locked --project tests/e2e tests/e2e/run.py \
   --mc 26.3 --profile lithium --cycles 1000 \
-  --jar build/release-candidate/carpet-private-patches-0.2.0+mc26.2-26.3.jar
+  --jar build/release-candidate/carpet-private-patches-0.2.1+mc26.2-26.3.jar
 ```
 
 Required server matrix: `minimal`, `lithium` and `bluemap` on both versions, plus `production-mods` on 26.2. The latter pins the incident's Carpet/API/Lithium/TIS/Igny combination; it is not a complete copy of the production server.
@@ -41,7 +41,7 @@ Install Xvfb and Mesa/OpenAL runtime libraries, then run:
 ```bash
 EULA=true uv run --locked --project tests/e2e tests/e2e/run.py \
   --mc 26.2 --profile bluemap --client \
-  --jar build/release-candidate/carpet-private-patches-0.2.0+mc26.2-26.3.jar
+  --jar build/release-candidate/carpet-private-patches-0.2.1+mc26.2-26.3.jar
 ```
 
 Repeat for 26.3. Assets are prepared before the dedicated server starts. Fabric client GameTest drives a real client through three network connections, two dimension changes and a respawn. Both patch rules are enabled on the server; ordinary events must occur exactly once, and BlueMap's player collections must be empty after the final disconnect. The server runs in a separate JVM, and the production patch is absent from the client. Xvfb and Mesa software rendering keep the tests independent of WSL's host GPU driver.
@@ -60,3 +60,5 @@ uv run --locked --project tests/e2e tests/e2e/collect_results.py \
 ```
 
 Test classes, observation accessors and test commands must stay outside the production JAR.
+
+Each fresh world starts with `language zh_cn` in `carpet.conf`. Tests require both patch rules to belong to Carpet's main manager, expose translated help, and use `/carpet` without a separate `/privatepatches` command. Persistence checks inspect the actual `carpet.conf`, preserve the existing language setting, reject a newly created `privatepatches.conf`, and verify both rules again after restart.

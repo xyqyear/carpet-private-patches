@@ -12,11 +12,13 @@
 默认关闭。持久开启：
 
 ```text
-/privatepatches setDefault playerRetentionMemoryLeakFix true
-/privatepatches setDefault fixBlueMap true
+/carpet setDefault playerRetentionMemoryLeakFix true
+/carpet setDefault fixBlueMap true
 ```
 
-临时切换：`/privatepatches <规则名> true/false`。两项功能分别控制，BlueMap 是可选模组。
+临时切换：`/carpet <规则名> true/false`。两项功能分别控制，BlueMap 是可选模组。
+
+配置统一保存在世界目录的 `carpet.conf`。从 0.2.0 或更早版本升级后，请用上述命令按原值重新保存；旧 `privatepatches.conf` 不再读取。
 
 关闭期间已经泄漏的网络记录需要重启释放。地图清理每 100 tick 执行一次。
 

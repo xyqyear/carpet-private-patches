@@ -47,7 +47,8 @@ def main():
             required = {"connection_rules_memory_false_events_false", "connection_rules_memory_false_events_true",
                         "connection_rules_memory_true_events_false", "connection_rules_memory_true_events_true",
                         "connection_reconnect_and_duplicate_disconnect", "connection_repeated_lifecycle",
-                        "persistent_rule_loaded", "persistent_bluemap_rule_loaded"}
+                        "persistent_rule_loaded", "persistent_bluemap_rule_loaded",
+                        "shared_carpet_commands", "shared_carpet_config_written", "shared_carpet_config_loaded"}
             if key[1] == "bluemap":
                 required.add("real_bluemap_loaded")
             else:

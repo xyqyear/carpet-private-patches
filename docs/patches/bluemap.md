@@ -28,10 +28,12 @@ BlueMap 通过 Fabric `ServerPlayConnectionEvents.JOIN` / `DISCONNECT` 维护在
 `fixBlueMap` 顺带释放网络注册记录，是 Fabric 完整退出流程的自然结果。它不清理原版地图物品的玩家引用，也不能替代整个内存功能。
 
 ```text
-/privatepatches setDefault fixBlueMap true
-/privatepatches fixBlueMap true
-/privatepatches fixBlueMap false
+/carpet setDefault fixBlueMap true
+/carpet fixBlueMap true
+/carpet fixBlueMap false
 ```
+
+配置使用世界目录下的 `carpet.conf`。从 0.2.0 或更早版本升级时，旧 `privatepatches.conf` 不会自动导入；请用 `/carpet setDefault` 按原值重新保存两项规则。
 
 开启后覆盖后续退出，包括已经在线的假玩家。关闭后不补发退出通知。开启规则不会为已经离线的历史实例重放事件，已有残留应通过重启等方式清理。避免同时启用其他模组直接广播同类事件的补丁：Fabric 的幂等状态无法约束绕过它直接调用事件 invoker 的代码。
 

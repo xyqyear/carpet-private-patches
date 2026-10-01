@@ -49,7 +49,7 @@ class ReleaseContractTest {
                     "src/main/resources/assets/privatepatches/lang/" + language + ".json"))).getAsJsonObject();
             for (var rule : new String[]{"playerRetentionMemoryLeakFix", "fixBlueMap"}) {
                 for (var suffix : new String[]{"desc", "extra.0", "extra.1"}) {
-                    assertFalse(translations.get("privatepatches.rule." + rule + "." + suffix)
+                    assertFalse(translations.get("carpet.rule." + rule + "." + suffix)
                             .getAsString().isBlank());
                 }
             }

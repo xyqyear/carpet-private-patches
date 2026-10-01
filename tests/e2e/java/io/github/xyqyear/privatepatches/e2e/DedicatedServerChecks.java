@@ -1,5 +1,6 @@
 package io.github.xyqyear.privatepatches.e2e;
 
+import carpet.CarpetServer;
 import carpet.patches.EntityPlayerMPFake;
 import carpet.patches.FakeClientConnection;
 import carpet.patches.NetHandlerPlayServerFake;
@@ -36,6 +37,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
@@ -141,10 +143,22 @@ public final class DedicatedServerChecks implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(game -> {
             server = game;
             baseline = trackedCount();
+            once("shared_carpet_commands", () -> {
+                var commands = server.getCommands().getDispatcher().getRoot();
+                check(commands.getChild("carpet") != null, "Carpet command missing");
+                check(commands.getChild("privatepatches") == null, "independent command still registered");
+                for (var name : new String[]{RULE, "fixBlueMap"}) {
+                    var rule = CarpetServer.settingsManager.getCarpetRule(name);
+                    check(rule != null && rule.settingsManager() == CarpetServer.settingsManager,
+                            "rule is not owned by Carpet: " + name);
+                    check(rule.extraInfo().size() == 2, "rule translations missing: " + name);
+                }
+            });
             if (FabricLoader.getInstance().isModLoaded("bluemap")) blueMap = new BlueMapProbe();
             if (mode.equals("persistence")) {
                 once("persistent_rule_loaded", () -> check(enabled(), "setDefault did not survive restart"));
                 once("persistent_bluemap_rule_loaded", () -> check(BlueMapPatch.fixBlueMap, "fixBlueMap did not survive restart"));
+                once("shared_carpet_config_loaded", this::checkSharedConfig);
             } else if (mode.equals("client")) {
                 prepareClientSteps();
             } else if (mode.equals("bluemap")) {
@@ -309,12 +323,25 @@ public final class DedicatedServerChecks implements ModInitializer {
     private void preparePersistence() {
         once("set_default", () -> {
             server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
-                    "privatepatches setDefault " + RULE + " true");
+                    "carpet setDefault " + RULE + " true");
             server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
-                    "privatepatches setDefault fixBlueMap true");
+                    "carpet setDefault fixBlueMap true");
             check(enabled(), "setDefault failed");
             check(BlueMapPatch.fixBlueMap, "fixBlueMap setDefault failed");
         });
+        once("shared_carpet_config_written", this::checkSharedConfig);
+    }
+
+    private void checkSharedConfig() {
+        var root = server.getWorldPath(LevelResource.ROOT);
+        try {
+            var lines = Files.readAllLines(root.resolve("carpet.conf"));
+            check(lines.contains(RULE + " true") && lines.contains("fixBlueMap true"), "rules not saved to carpet.conf");
+            check(lines.contains("language zh_cn"), "existing Carpet setting was lost");
+            check(!Files.exists(root.resolve("privatepatches.conf")), "independent config was created");
+        } catch (java.io.IOException failure) {
+            throw new AssertionError("Cannot read shared Carpet configuration", failure);
+        }
     }
 
     private void prepareConnectionSteps() {
@@ -440,7 +467,7 @@ public final class DedicatedServerChecks implements ModInitializer {
     }
 
     private void setBlueMapRule(boolean value) {
-        server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "privatepatches fixBlueMap " + value);
+        server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "carpet fixBlueMap " + value);
         check(BlueMapPatch.fixBlueMap == value, "Carpet command failed to set fixBlueMap");
     }
 
@@ -573,7 +600,7 @@ public final class DedicatedServerChecks implements ModInitializer {
     }
 
     private void setRule(boolean value) {
-        server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "privatepatches " + RULE + " " + value);
+        server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "carpet " + RULE + " " + value);
         check(enabled() == value, "Carpet command failed to set rule");
     }
 

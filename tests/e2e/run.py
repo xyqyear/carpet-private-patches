@@ -183,6 +183,8 @@ def main():
     shutil.copy2(args.jar, run_dir / "mods/privatepatches.jar")
     shutil.copy2(test_jar, run_dir / "mods/privatepatches-e2e.jar")
     (run_dir / "eula.txt").write_text("eula=true\n")
+    (run_dir / "world").mkdir()
+    (run_dir / "world/carpet.conf").write_text("language zh_cn\n")
     if args.profile == "bluemap":
         configure_bluemap(run_dir, args.mc)
     properties = {
