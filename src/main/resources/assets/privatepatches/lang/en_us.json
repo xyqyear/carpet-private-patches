@@ -1,5 +1,8 @@
 {
   "privatepatches.category.bugfix": "bugfix",
+  "privatepatches.rule.fixBlueMap.desc": "Notify Fabric disconnect listeners when Carpet fake players leave, removing stale BlueMap player markers.",
+  "privatepatches.rule.fixBlueMap.extra.0": "Notifies all Fabric disconnect subscribers once and ends the network session. Does not send extra JOIN events or require BlueMap.",
+  "privatepatches.rule.fixBlueMap.extra.1": "Applies to subsequent disconnects, including currently online fake players. Does not repair already-stale BlueMap records or clean map item references.",
   "privatepatches.rule.playerRetentionMemoryLeakFix.desc": "Release disconnected Carpet players from Fabric networking and remove stale player references from loaded maps.",
   "privatepatches.rule.playerRetentionMemoryLeakFix.extra.0": "Also cleans map references to removed ordinary players. Map cleanup runs every 100 server ticks.",
   "privatepatches.rule.playerRetentionMemoryLeakFix.extra.1": "Enabling protects subsequent disconnects, including currently online fake players. Network references leaked while disabled need a restart."

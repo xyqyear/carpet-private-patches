@@ -8,6 +8,7 @@ import com.mojang.authlib.GameProfile;
 import io.github.xyqyear.privatepatches.patches.playerretention.mixin.MapItemSavedDataAccessor;
 import io.github.xyqyear.privatepatches.e2e.mixin.RegistryProbe;
 import io.github.xyqyear.privatepatches.patches.playerretention.PlayerRetentionPatch;
+import io.github.xyqyear.privatepatches.patches.bluemap.BlueMapPatch;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -67,6 +68,11 @@ public final class DedicatedServerChecks implements ModInitializer {
     private int baseline;
     private int initEvents;
     private int completedCycles;
+    private int connectionCycles;
+    private int fakeJoins;
+    private int fakeDisconnects;
+    private int disconnectsBeforeKill;
+    private BlueMapProbe blueMap;
     private int mapSequence;
     private int normalJoins;
     private int normalDisconnects;
@@ -84,6 +90,7 @@ public final class DedicatedServerChecks implements ModInitializer {
     public void onInitialize() {
         ServerPlayConnectionEvents.INIT.register((listener, game) -> initEvents++);
         ServerPlayConnectionEvents.JOIN.register((listener, sender, game) -> {
+            if (listener.player instanceof EntityPlayerMPFake) fakeJoins++;
             if (mode.equals("client") && !(listener.player instanceof EntityPlayerMPFake)) {
                 check(tracked(addon(listener.player)), "normal player must be registered while online");
                 normalJoins++;
@@ -91,6 +98,7 @@ public final class DedicatedServerChecks implements ModInitializer {
             }
         });
         ServerPlayConnectionEvents.DISCONNECT.register((listener, game) -> {
+            if (listener.player instanceof EntityPlayerMPFake) fakeDisconnects++;
             if (mode.equals("client") && !(listener.player instanceof EntityPlayerMPFake)) {
                 game.execute(() -> normalDisconnects++);
             }
@@ -133,20 +141,26 @@ public final class DedicatedServerChecks implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(game -> {
             server = game;
             baseline = trackedCount();
+            if (FabricLoader.getInstance().isModLoaded("bluemap")) blueMap = new BlueMapProbe();
             if (mode.equals("persistence")) {
                 once("persistent_rule_loaded", () -> check(enabled(), "setDefault did not survive restart"));
+                once("persistent_bluemap_rule_loaded", () -> check(BlueMapPatch.fixBlueMap, "fixBlueMap did not survive restart"));
             } else if (mode.equals("client")) {
                 prepareClientSteps();
+            } else if (mode.equals("bluemap")) {
+                check(blueMap != null, "BlueMap integration profile must load the actual mod");
+                waitFor("real_bluemap_loaded", 3600, blueMap::loaded);
+                prepareConnectionSteps();
+                preparePersistence();
             } else {
                 prepareRegressionSteps();
             }
-            writeReady();
         });
         ServerTickEvents.END_SERVER_TICK.register(game -> tick());
     }
 
     private void prepareRegressionSteps() {
-        once("default_disabled", () -> check(!enabled(), "rule must be opt-in"));
+        once("default_disabled", () -> check(!enabled() && !BlueMapPatch.fixBlueMap, "rules must be opt-in"));
         once("negative_control", () -> {
             newMaps();
             for (int i = 0; i < 12; i++) {
@@ -288,19 +302,167 @@ public final class DedicatedServerChecks implements ModInitializer {
             }
             return true;
         });
+        prepareConnectionSteps();
+        preparePersistence();
+    }
+
+    private void preparePersistence() {
         once("set_default", () -> {
             server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
                     "privatepatches setDefault " + RULE + " true");
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
+                    "privatepatches setDefault fixBlueMap true");
             check(enabled(), "setDefault failed");
+            check(BlueMapPatch.fixBlueMap, "fixBlueMap setDefault failed");
         });
     }
 
+    private void prepareConnectionSteps() {
+        once("bluemap_default_disabled", () -> check(!BlueMapPatch.fixBlueMap, "fixBlueMap must be opt-in"));
+        for (boolean memory : new boolean[]{false, true}) {
+            for (boolean events : new boolean[]{false, true}) {
+                String combination = "memory_" + memory + "_events_" + events;
+                once("connection_rules_" + combination, () -> {
+                    setRule(memory);
+                    setBlueMapRule(events);
+                    newMaps();
+                    var player = spawn("PPEvents");
+                    track(player);
+                    expectBlueMap(player, 1);
+                    int before = fakeDisconnects;
+                    disconnect(player);
+                    check(fakeDisconnects == before + (events ? 1 : 0), "incorrect DISCONNECT count: " + combination);
+                    check(tracked(addon(player)) == !(memory || events), "incorrect session cleanup: " + combination);
+                    expectBlueMap(player, events ? 0 : 1);
+                    check(removedHolders() > 0, "map fixture did not retain the removed player");
+                    // Isolate deliberately retained records only after checking both negative controls.
+                    if (!events && blueMap != null) blueMap.isolateNegativeControl(server, player);
+                    addon(player).endSession();
+                });
+                waitFor("connection_map_independence_" + combination, 150, () -> {
+                    if (elapsed() < 110) return false;
+                    check((removedHolders() == 0) == memory, "fixBlueMap changed map cleanup ownership");
+                    return true;
+                });
+            }
+        }
+        once("connection_toggle_existing_player", () -> {
+            setRule(false);
+            setBlueMapRule(false);
+            var player = spawn("PPToggle");
+            setBlueMapRule(true);
+            int before = fakeDisconnects;
+            disconnect(player);
+            check(fakeDisconnects == before + 1, "enabling must cover already-online players");
+            expectBlueMap(player, 0);
+            var second = spawn("PPToggle");
+            setBlueMapRule(false);
+            before = fakeDisconnects;
+            disconnect(second);
+            check(fakeDisconnects == before && tracked(addon(second)), "disabling must stop notification and cleanup");
+            expectBlueMap(second, 1);
+            if (blueMap != null) blueMap.isolateNegativeControl(server, second);
+            addon(second).endSession();
+        });
+        once("connection_reconnect_and_duplicate_disconnect", () -> {
+            setBlueMapRule(true);
+            var old = spawn("PPEventsAgain");
+            int before = fakeDisconnects;
+            disconnect(old);
+            check(fakeDisconnects == before + 1, "first disconnect event missing");
+            var current = spawn("PPEventsAgain");
+            check(old.getUUID().equals(current.getUUID()) && old != current, "reconnect fixture invalid");
+            addon(old).handleDisconnect();
+            addon(old).handleDisconnect();
+            check(fakeDisconnects == before + 1, "old session emitted duplicate disconnect");
+            expectBlueMap(current, 1);
+            check(tracked(addon(current)), "old disconnect ended the new session");
+            disconnect(current);
+            expectBlueMap(current, 0);
+        });
+        if (FabricLoader.getInstance().isModLoaded("carpet-igny-addition")) {
+            once("connection_igny_start", () -> {
+                pending = spawn("PPEventVault");
+                disconnectsBeforeKill = fakeDisconnects;
+                startVault("PPEventVault");
+            });
+            waitFor("connection_igny_logout", 100, () -> {
+                if (!pending.isRemoved()) return false;
+                check(fakeDisconnects == disconnectsBeforeKill + 1, "Igny must emit one disconnect");
+                check(!tracked(addon(pending)), "Igny retained the network session");
+                stopVault();
+                pending = null;
+                return true;
+            });
+            once("connection_igny_stop", () -> {
+                var player = spawn("PPEventStop");
+                int before = fakeDisconnects;
+                startVault("PPEventStop");
+                stopVault();
+                check(player.isRemoved() && fakeDisconnects == before + 1, "Igny stop must emit one disconnect");
+                check(!tracked(addon(player)), "Igny stop retained network session");
+            });
+        }
+        waitFor("connection_repeated_lifecycle", Math.max(500, cycles * 3), () -> {
+            if (pending != null) {
+                check(pending.isRemoved(), "Carpet kill did not remove player");
+                check(fakeDisconnects == disconnectsBeforeKill + 1, "kill must emit exactly one disconnect");
+                check(!tracked(addon(pending)), "disconnected addon retained");
+                expectBlueMap(pending, 0);
+                pending = null;
+            }
+            if (connectionCycles == cycles) {
+                observations.put("completed_connection_cycles", connectionCycles);
+                observations.put("fake_join_events", fakeJoins);
+                observations.put("fake_disconnect_events", fakeDisconnects);
+                if (blueMap != null) observations.put("bluemap_version", FabricLoader.getInstance()
+                        .getModContainer("bluemap").orElseThrow().getMetadata().getVersion().getFriendlyString());
+                return true;
+            }
+            pending = spawn("PPEventCycle");
+            expectBlueMap(pending, 1);
+            disconnectsBeforeKill = fakeDisconnects;
+            if (connectionCycles % 2 == 0) {
+                server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "player PPEventCycle kill");
+            } else {
+                disconnect(pending);
+            }
+            connectionCycles++;
+            return false;
+        });
+        once("connection_all_sessions_released", () -> {
+            check(trackedCount() == baseline, "connection test retained sessions");
+            if (blueMap != null) {
+                blueMap.expectEmpty();
+                observations.put("bluemap_remaining_players", 0);
+            }
+        });
+    }
+
+    private void setBlueMapRule(boolean value) {
+        server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "privatepatches fixBlueMap " + value);
+        check(BlueMapPatch.fixBlueMap == value, "Carpet command failed to set fixBlueMap");
+    }
+
+    private void expectBlueMap(ServerPlayer player, int count) {
+        if (blueMap != null) blueMap.expect(player.getUUID(), count);
+    }
+
     private void prepareClientSteps() {
-        once("client_test_setup", () -> { setRule(true); newMaps(); });
+        if (blueMap != null) waitFor("real_bluemap_loaded", 3600, blueMap::loaded);
+        once("client_test_setup", () -> { setRule(true); setBlueMapRule(true); newMaps(); writeReady(); });
         waitFor("ordinary_network_connect_disconnect", 3600, () -> {
+            for (var player : server.getPlayerList().getPlayers()) expectBlueMap(player, 1);
             if (!clientDone || normalJoins < 3 || normalDisconnects != normalJoins
                     || !server.getPlayerList().getPlayers().isEmpty()) return false;
             check(trackedCount() == baseline, "ordinary disconnected addon retained");
+            check(normalJoins == 3 && normalDisconnects == 3, "ordinary player events duplicated");
+            if (blueMap != null) {
+                blueMap.expectEmpty();
+                observations.put("bluemap_remaining_players", 0);
+                observations.put("bluemap_version", FabricLoader.getInstance().getModContainer("bluemap")
+                        .orElseThrow().getMetadata().getVersion().getFriendlyString());
+            }
             observations.put("normal_player_joins", normalJoins);
             observations.put("normal_player_disconnects", normalDisconnects);
             check(normalRespawns >= 1, "no ordinary respawn was tested");
@@ -316,6 +478,7 @@ public final class DedicatedServerChecks implements ModInitializer {
         var profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(StandardCharsets.UTF_8)), name);
         var player = EntityPlayerMPFake.respawnFake(server, server.overworld(), profile, ClientInformation.createDefault());
         int before = initEvents;
+        int joinsBefore = fakeJoins;
         server.getPlayerList().placeNewPlayer(new FakeClientConnection(PacketFlow.SERVERBOUND), player,
                 new CommonListenerCookie(profile, 0, player.clientInformation(), false));
         player.snapTo(0.5, 81, 0.5, 0, 0);
@@ -323,6 +486,7 @@ public final class DedicatedServerChecks implements ModInitializer {
         player.getAbilities().flying = true;
         check(player.connection instanceof NetHandlerPlayServerFake, "real Carpet listener was not installed");
         check(initEvents == before + 1, "Fabric INIT behavior changed");
+        check(fakeJoins == joinsBefore + 1, "fake player must emit exactly one JOIN");
         check(tracked(addon(player)), "online fake addon must retain its original initialization");
         return player;
     }

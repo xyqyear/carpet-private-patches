@@ -4,6 +4,7 @@ import carpet.CarpetExtension;
 import carpet.CarpetServer;
 import carpet.api.settings.SettingsManager;
 import carpet.utils.Translations;
+import io.github.xyqyear.privatepatches.patches.bluemap.BlueMapPatch;
 import io.github.xyqyear.privatepatches.patches.playerretention.PlayerRetentionPatch;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -27,6 +28,7 @@ public final class PrivatePatches implements ModInitializer, CarpetExtension {
     @Override
     public void onGameStarted() {
         settings.parseSettingsClass(PlayerRetentionPatch.class);
+        settings.parseSettingsClass(BlueMapPatch.class);
     }
 
     @Override
@@ -36,7 +38,11 @@ public final class PrivatePatches implements ModInitializer, CarpetExtension {
 
     @Override
     public void onPlayerLoggedOut(ServerPlayer player) {
-        PlayerRetentionPatch.onPlayerLoggedOut(player);
+        try {
+            BlueMapPatch.onPlayerLoggedOut(player);
+        } finally {
+            PlayerRetentionPatch.onPlayerLoggedOut(player);
+        }
     }
 
     @Override

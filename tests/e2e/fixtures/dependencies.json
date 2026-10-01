@@ -78,6 +78,26 @@
           "url": "https://cdn.modrinth.com/data/7PCm6yD1/versions/2R6QG812/carpet-igny-addition-v1.18.0-mc26.2.jar",
           "sha512": "7796149747156c3287f4c6a1fdb596a7cf476c8bbd231277c3aa5c223861aa16d51f95511a8d62fe9de11c3443074c36149ddc9a546ba6c1f0899e294ad0b680"
         }
+      ],
+      "bluemap": [
+        {
+          "filename": "fabric-api-0.161.0+26.2.jar",
+          "version": "0.161.0+26.2",
+          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/ewUK83HI/fabric-api-0.161.0%2B26.2.jar",
+          "sha512": "2502fa5ade78e9a120b3747bc1a9a2167d6671743bea45bf115d3174c94121aeda87c549446d1a604a9c11fb828de17a551e3514ce42f3e93069dd14bdaee55b"
+        },
+        {
+          "filename": "fabric-carpet-26.2+v260616.jar",
+          "version": "26.2",
+          "url": "https://cdn.modrinth.com/data/TQTTVgYE/versions/bGrLxJ8v/fabric-carpet-26.2%2Bv260616.jar",
+          "sha512": "8b8fac6979bd3153f5cfb4faa6bab52e1357eab814492a6658f3c0e1ac2856ad37a626c0a03a0839c39abb7bf56661f77b09d05d10ac01173bcdd373a33c6265"
+        },
+        {
+          "filename": "bluemap-5.28-fabric.jar",
+          "version": "5.28-fabric",
+          "url": "https://cdn.modrinth.com/data/swbUV1cr/versions/bbzcTCOs/bluemap-5.28-fabric.jar",
+          "sha512": "21978808ee083f6abe06ba23fd0ff6c0e07fcfa7260f3e1cff959a517836e3e71a08a43574a3711ec37456bd6ad9fc1ebaabb736b590ee53f0d79f01637f8b26"
+        }
       ]
     },
     "26.3": {
@@ -113,6 +133,26 @@
           "version": "mc26.3-0.26.2-fabric",
           "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/xS0Q8LSi/lithium-fabric-0.26.2%2Bmc26.3.jar",
           "sha512": "4d7fee66132eedc71feab9390b92c95d7058edbdad0fecfac1d836a2950b97a7ca463afbede61c7ef361ce65e1f927ab9e89dde5bf2e0e0ce486afb5c5dbee40"
+        }
+      ],
+      "bluemap": [
+        {
+          "filename": "fabric-api-0.161.0+26.3.jar",
+          "version": "0.161.0+26.3",
+          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/bNnaTiuM/fabric-api-0.161.0%2B26.3.jar",
+          "sha512": "ed6b2586d6fde11fde8472f5a527c51e99b67026e46f94d4bfd85e7e28ce5ee299173ee16ad576ceb51f39f98d30a811086a6deb1a86a524859cc16e12da109d"
+        },
+        {
+          "filename": "fabric-carpet-26.3+v260915.jar",
+          "version": "26.3",
+          "url": "https://cdn.modrinth.com/data/TQTTVgYE/versions/yt9oDFOj/fabric-carpet-26.3%2Bv260915.jar",
+          "sha512": "7a479ba69eb5049cb94365d5044bd58c9f970c50b3484861fe3675f1917f7c99c1b1f50a5e01bdd9ded940d76a995539009a3656e05be2f513f20ec14de991a7"
+        },
+        {
+          "filename": "bluemap-5.28-fabric.jar",
+          "version": "5.28-fabric",
+          "url": "https://cdn.modrinth.com/data/swbUV1cr/versions/bbzcTCOs/bluemap-5.28-fabric.jar",
+          "sha512": "21978808ee083f6abe06ba23fd0ff6c0e07fcfa7260f3e1cff959a517836e3e71a08a43574a3711ec37456bd6ad9fc1ebaabb736b590ee53f0d79f01637f8b26"
         }
       ]
     }

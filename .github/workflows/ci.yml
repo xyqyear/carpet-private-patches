@@ -62,6 +62,10 @@ jobs:
             profile: minimal
           - mc: '26.3'
             profile: lithium
+          - mc: '26.2'
+            profile: bluemap
+          - mc: '26.3'
+            profile: bluemap
     env:
       EULA: 'true'
     steps:
@@ -94,15 +98,15 @@ jobs:
             --mc "$MC_VERSION" --profile "$PROFILE" --cycles "$CYCLES" \
             --jar build/release-candidate/*+mc26.2-26.3.jar
       - name: Install virtual display
-        if: inputs.release && matrix.profile == 'minimal'
+        if: inputs.release && matrix.profile == 'bluemap'
         run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 libopenal1
       - name: Run real client against dedicated server
-        if: inputs.release && matrix.profile == 'minimal'
+        if: inputs.release && matrix.profile == 'bluemap'
         env:
           MC_VERSION: ${{ matrix.mc }}
         run: |
           uv run --locked --project tests/e2e tests/e2e/run.py \
-            --mc "$MC_VERSION" --profile minimal --client \
+            --mc "$MC_VERSION" --profile bluemap --client \
             --jar build/release-candidate/*+mc26.2-26.3.jar
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
@@ -112,6 +116,7 @@ jobs:
             build/e2e/**/result.json
             build/e2e/**/regression.json
             build/e2e/**/persistence.json
+            build/e2e/**/bluemap.json
             build/e2e/**/client.json
             build/e2e/**/client-result.json
             build/e2e/**/*.xml

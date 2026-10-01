@@ -53,6 +53,22 @@ def unused_port():
         return listener.getsockname()[1]
 
 
+def configure_bluemap(run_dir, minecraft):
+    config = run_dir / "config/bluemap"
+    config.mkdir(parents=True)
+    (config / "core.conf").write_text(
+        'accept-download: true\nrender-thread-count: 1\nmetrics: false\nscan-for-mod-resources: false\n')
+    (config / "webserver.conf").write_text('enabled: false\n')
+    (config / "webapp.conf").write_text('enabled: false\n')
+    (config / "plugin.conf").write_text('skin-download: false\n')
+    loom = Path(os.environ.get("GRADLE_USER_HOME", Path.home() / ".gradle")) / "caches/fabric-loom" / minecraft
+    client = loom / "minecraft-client.jar"
+    if client.is_file():
+        data = run_dir / "bluemap"
+        data.mkdir()
+        shutil.copy2(client, data / f"minecraft-client-{minecraft}.jar")
+
+
 def stop_process(process):
     if process.poll() is None:
         os.killpg(process.pid, signal.SIGTERM)
@@ -135,7 +151,7 @@ def launch(args, run_dir, launcher, mode):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mc", choices=LOCK["profiles"], required=True)
-    parser.add_argument("--profile", choices=["minimal", "lithium", "production-mods"], default="minimal")
+    parser.add_argument("--profile", choices=["minimal", "lithium", "production-mods", "bluemap"], default="minimal")
     parser.add_argument("--jar", type=Path, required=True)
     parser.add_argument("--test-jar", type=Path)
     parser.add_argument("--cycles", type=int, default=100)
@@ -167,6 +183,8 @@ def main():
     shutil.copy2(args.jar, run_dir / "mods/privatepatches.jar")
     shutil.copy2(test_jar, run_dir / "mods/privatepatches-e2e.jar")
     (run_dir / "eula.txt").write_text("eula=true\n")
+    if args.profile == "bluemap":
+        configure_bluemap(run_dir, args.mc)
     properties = {
         "server-ip": "127.0.0.1", "server-port": unused_port(), "online-mode": "false",
         "white-list": "false", "enforce-whitelist": "false",
@@ -188,7 +206,8 @@ def main():
                            stdout=log, stderr=subprocess.STDOUT, timeout=args.timeout, check=True)
         reports = [launch(args, run_dir, launcher, "client")]
     else:
-        reports = [launch(args, run_dir, launcher, "regression"), launch(args, run_dir, launcher, "persistence")]
+        mode = "bluemap" if args.profile == "bluemap" else "regression"
+        reports = [launch(args, run_dir, launcher, mode), launch(args, run_dir, launcher, "persistence")]
     summary = {"passed": True, "minecraft": args.mc, "profile": args.profile,
                "jar_sha256": digest(args.jar), "loader": LOCK["loader"], "dependencies": profile,
                "cycles": args.cycles, "reports": reports}

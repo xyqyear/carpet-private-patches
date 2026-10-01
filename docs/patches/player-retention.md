@@ -47,6 +47,8 @@ SavedDataStorage.cache
 
 Carpet 的退出回调位于监听器 `onDisconnect()` 的入口，所以也覆盖 Igny 直接调用监听器的方式。只调用 `endSession()`，不额外触发其他 Mod 的 Fabric DISCONNECT 订阅者；补丁目标是本次确认的强引用路径。
 
+独立的 [`fixBlueMap`](bluemap.md) 规则可以补齐 Fabric DISCONNECT 通知，并由 Fabric 顺带注销网络会话。两个规则都开启时，退出通知仍只发送一次；本规则继续独立控制地图引用清理。
+
 地图清理按具体对象和移除状态判断，不按名字或 UUID 删除，避免误伤同账号的新会话。它也清理普通玩家的旧引用。不加载额外区块或地图文件，不修改地图像素、标记、玩家存档或进度。
 
 生产实现只有一个功能类、两个地图 Accessor 与一个 Carpet 扩展入口。Mixin 专用子包与普通功能类分开，避免 Mixin 的类加载限制。没有额外的玩家、连接或世界缓存。

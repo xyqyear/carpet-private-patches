@@ -5,10 +5,10 @@ Run local tests in **WSL**, from a native Linux build directory, with Java 25, `
 ```bash
 ./gradlew check e2eJar
 mkdir -p build/release-candidate
-cp build/libs/*+mc26.2-26.3.jar build/release-candidate/
+cp build/libs/carpet-private-patches-0.2.0+mc26.2-26.3.jar build/release-candidate/
 EULA=true uv run --locked --project tests/e2e tests/e2e/run.py \
   --mc 26.2 --profile minimal --cycles 1000 \
-  --jar build/release-candidate/carpet-private-patches-0.1.1+mc26.2-26.3.jar
+  --jar build/release-candidate/carpet-private-patches-0.2.0+mc26.2-26.3.jar
 ```
 
 Set `EULA=true` after accepting the [Minecraft EULA](https://aka.ms/MinecraftEULA). The runner downloads hash-checked fixtures and uses isolated worlds bound to localhost, offline login, small view distances and the official Fabric launcher.
@@ -19,14 +19,20 @@ For Minecraft 26.3, compile the **test Mod** against that version, then pass the
 ./gradlew e2eJar -PmcVersion=26.3
 EULA=true uv run --locked --project tests/e2e tests/e2e/run.py \
   --mc 26.3 --profile lithium --cycles 1000 \
-  --jar build/release-candidate/carpet-private-patches-0.1.1+mc26.2-26.3.jar
+  --jar build/release-candidate/carpet-private-patches-0.2.0+mc26.2-26.3.jar
 ```
 
-Required server matrix: `minimal` and `lithium` on both versions, plus `production-mods` on 26.2. The latter pins the incident's Carpet/API/Lithium/TIS/Igny combination; it is not a complete copy of the production server.
+Required server matrix: `minimal`, `lithium` and `bluemap` on both versions, plus `production-mods` on 26.2. The latter pins the incident's Carpet/API/Lithium/TIS/Igny combination; it is not a complete copy of the production server.
 
 The harness constructs genuine Carpet players through `respawnFake` and `placeNewPlayer`, avoiding external profile lookups. It alternates the actual `/player ... kill` command and direct listener disconnect. It executes `tickCarriedBy` with a real `ItemFrame` instance to exercise Lithium's framed-map path, and separately keeps a dormant map. This tests the affected map method and references, not rendering or item-frame gameplay.
 
 With Igny installed, it also starts the real `VaultTask`, lets its logout stage run, and tests its stop cleanup. Reflection exists only in this optional test adapter; production code has no Igny dependency. The negative control deliberately reproduces leaks before test-only cleanup isolates later assertions.
+
+## BlueMap integration
+
+Use `--profile bluemap` to load the pinned actual BlueMap 5.28 Fabric JAR. Its plugin must finish loading before assertions begin. The test reads its online player Map and List using a test-only reflection adapter, without adding a production dependency. Web hosting, webapp generation, skin downloads and metrics are disabled; this is a player-tracking test, not a rendering test. Existing Loom client resources are copied into the isolated BlueMap data folder when available; otherwise BlueMap downloads them under the runner's existing EULA agreement.
+
+All server profiles check both rules in four combinations, exactly one JOIN per fake session, enabled/disabled DISCONNECT counts, network cleanup, independent map cleanup, toggles for already-online players, same-UUID reconnects and repeated addon disconnects. The `bluemap` profile additionally proves that disabled rules leave real stale entries and enabled rules remove them. Deliberate negative-control leftovers are isolated only after assertions. Each profile executes `--cycles` connection lifecycles, and both rules must persist through a restart.
 
 ## Real client
 
@@ -34,11 +40,11 @@ Install Xvfb and Mesa/OpenAL runtime libraries, then run:
 
 ```bash
 EULA=true uv run --locked --project tests/e2e tests/e2e/run.py \
-  --mc 26.2 --profile minimal --client \
-  --jar build/release-candidate/carpet-private-patches-0.1.1+mc26.2-26.3.jar
+  --mc 26.2 --profile bluemap --client \
+  --jar build/release-candidate/carpet-private-patches-0.2.0+mc26.2-26.3.jar
 ```
 
-Repeat for 26.3. Assets are prepared before the dedicated server starts. Fabric client GameTest drives a real client through three network connections, two dimension changes and a respawn. The server runs in a separate JVM, and the production patch is absent from the client. Xvfb and Mesa software rendering keep the tests independent of WSL's host GPU driver.
+Repeat for 26.3. Assets are prepared before the dedicated server starts. Fabric client GameTest drives a real client through three network connections, two dimension changes and a respawn. Both patch rules are enabled on the server; ordinary events must occur exactly once, and BlueMap's player collections must be empty after the final disconnect. The server runs in a separate JVM, and the production patch is absent from the client. Xvfb and Mesa software rendering keep the tests independent of WSL's host GPU driver.
 
 Include `libegl1` and `libegl-mesa0` in the Linux runtime libraries. The runner sets [`SDL_VIDEO_FORCE_EGL=1`](https://wiki.libsdl.org/SDL3/SDL_HINT_VIDEO_FORCE_EGL): Minecraft 26.3 requests an sRGB framebuffer that Xvfb's GLX path may not provide. A failed server report also stops the client promptly.
 
@@ -46,7 +52,7 @@ Include `libegl1` and `libegl-mesa0` in the Linux runtime libraries. The runner 
 
 `build/e2e/<version>-<profile>/result.json` records the production JAR hash, pinned dependencies and completed checks. Per-run directories contain server/client logs, JSON details and JUnit XML. Client profiles use the `-client` suffix.
 
-A zero exit code alone is insufficient: missing reports, zero checks, failed assertions, crashes and timeouts fail the runner. Old unsuccessful run directories are preserved for diagnosis. Release collection requires five 1,000-cycle server results and two real-client results, all for the same JAR.
+A zero exit code alone is insufficient: missing reports, zero checks, failed assertions, crashes and timeouts fail the runner. Old unsuccessful run directories are preserved for diagnosis. Release collection requires seven 1,000-cycle server results and two real-client results against BlueMap, all for the same JAR. Use a candidate folder containing only the intended release JAR; previous versions must not be mixed into it.
 
 ```bash
 uv run --locked --project tests/e2e tests/e2e/collect_results.py \

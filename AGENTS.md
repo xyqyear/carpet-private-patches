@@ -14,6 +14,7 @@ This repository contains small, server-only Carpet patches. Use Java 25 and the 
 ## Implementation
 
 - One functional patch has one opt-in Carpet rule. Both player-retention fixes share `playerRetentionMemoryLeakFix`.
+- `fixBlueMap` is a separate feature: forward fake-player disconnects through Fabric's idempotent `handleDisconnect`. Do not emit extra JOIN events or introduce a BlueMap production dependency.
 - Keep code within a feature together. Add another package and explicit registration for a new feature; do not add a patch framework or automatic discovery.
 - Use `carpet.api.settings`. SettingsManager owns commands and persistent world configuration.
 - Check the rule in every behavior-changing entry point. A startup-only Mixin condition is not a runtime toggle.
@@ -28,6 +29,7 @@ This repository contains small, server-only Carpet patches. Use Java 25 and the 
 - See `tests/e2e/README.md` for real-server invocations. A successful launch is not a passing regression test.
 - Test the exact release JAR on every advertised Minecraft version. A second compilation is not evidence that the first JAR runs on that version.
 - Cover rule off/on, both retention roots, active players, reconnects, direct disconnects and persistence. Keep observers out of the release artifact.
+- Check both rules in all four combinations. BlueMap integration must load the actual pinned mod and inspect its player collections; event counts alone are insufficient. Test real clients with both rules enabled.
 - After changing a feature, update its documentation and both language descriptions; keep README short.
 - Before upgrading, inspect Carpet's logout callback, Fabric's `endSession`, and the three map-storage fields. Check whether upstream has fixed the underlying problem.
 - Use `v<mod-version>` tags. Release only tested artifacts, with checksums and compatibility results; never rebuild between verification and upload.

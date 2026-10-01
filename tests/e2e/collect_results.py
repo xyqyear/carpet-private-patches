@@ -19,9 +19,9 @@ def main():
         raise RuntimeError("Exactly one frozen release JAR is required")
     jar = jars[0]
     checksum = hashlib.sha256(jar.read_bytes()).hexdigest()
-    expected = {(mc, profile, False) for mc in ("26.2", "26.3") for profile in ("minimal", "lithium")}
+    expected = {(mc, profile, False) for mc in ("26.2", "26.3") for profile in ("minimal", "lithium", "bluemap")}
     expected.add(("26.2", "production-mods", False))
-    expected.update((mc, "minimal", True) for mc in ("26.2", "26.3"))
+    expected.update((mc, "bluemap", True) for mc in ("26.2", "26.3"))
     found = {}
     for file in args.results.rglob("result.json"):
         result = json.loads(file.read_text())
@@ -36,13 +36,27 @@ def main():
             if not report["passed"] or not report["checks"] or not all(c["passed"] for c in report["checks"]):
                 raise RuntimeError(f"Incomplete test report: {file}")
         names = {c["name"] for report in result["reports"] for c in report["checks"]}
+        if key[1] == "bluemap" and not any(r["observations"].get("bluemap_version")
+                and r["observations"].get("bluemap_remaining_players") == 0 for r in result["reports"]):
+            raise RuntimeError(f"Missing actual BlueMap cleanup observation: {file}")
         if key[2]:
             client = result["client"]
             if not client["passed"] or client["connections"] < 3 or client["patch_installed_on_client"]:
                 raise RuntimeError(f"Missing real-client regression: {file}")
-        elif result["cycles"] < 1000 or not {"negative_control", "both_map_containers_release_old_instances", "persistent_rule_loaded"} <= names:
-            raise RuntimeError(f"Release requires 1,000 cycles and persistence checks: {file}")
-        if key[1] == "production-mods" and not {"igny_vault_actual_logout", "igny_vault_actual_stop_cleanup"} <= names:
+        else:
+            required = {"connection_rules_memory_false_events_false", "connection_rules_memory_false_events_true",
+                        "connection_rules_memory_true_events_false", "connection_rules_memory_true_events_true",
+                        "connection_reconnect_and_duplicate_disconnect", "connection_repeated_lifecycle",
+                        "persistent_rule_loaded", "persistent_bluemap_rule_loaded"}
+            if key[1] == "bluemap":
+                required.add("real_bluemap_loaded")
+            else:
+                required.update({"negative_control", "both_map_containers_release_old_instances"})
+            if result["cycles"] < 1000 or not required <= names or not any(
+                    r["observations"].get("completed_connection_cycles", 0) >= 1000 for r in result["reports"]):
+                raise RuntimeError(f"Release requires 1,000 cycles, both feature checks and persistence: {file}")
+        if key[1] == "production-mods" and not {"igny_vault_actual_logout", "igny_vault_actual_stop_cleanup",
+                "connection_igny_logout", "connection_igny_stop"} <= names:
             raise RuntimeError("The production-mods profile must exercise the actual Igny vault paths")
         found[key] = result
     if set(found) != expected:

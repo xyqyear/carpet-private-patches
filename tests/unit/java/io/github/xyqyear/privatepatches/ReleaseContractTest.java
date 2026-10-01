@@ -1,6 +1,7 @@
 package io.github.xyqyear.privatepatches;
 
 import com.google.gson.JsonParser;
+import io.github.xyqyear.privatepatches.patches.bluemap.BlueMapPatch;
 import io.github.xyqyear.privatepatches.patches.playerretention.PlayerRetentionPatch;
 import org.junit.jupiter.api.Test;
 
@@ -15,11 +16,12 @@ class ReleaseContractTest {
 
     @Test
     void featureIsOptInAndHasOneSwitch() throws Exception {
-        var fields = PlayerRetentionPatch.class.getFields();
-        assertEquals(1, fields.length);
-        assertEquals(boolean.class, fields[0].getType());
-        assertEquals("playerRetentionMemoryLeakFix", fields[0].getName());
-        assertFalse(fields[0].getBoolean(null));
+        for (var feature : new Class<?>[]{PlayerRetentionPatch.class, BlueMapPatch.class}) {
+            var fields = feature.getFields();
+            assertEquals(1, fields.length);
+            assertEquals(boolean.class, fields[0].getType());
+            assertFalse(fields[0].getBoolean(null));
+        }
     }
 
     @Test
@@ -45,9 +47,11 @@ class ReleaseContractTest {
         for (var language : new String[]{"en_us", "zh_cn"}) {
             var translations = JsonParser.parseString(Files.readString(root.resolve(
                     "src/main/resources/assets/privatepatches/lang/" + language + ".json"))).getAsJsonObject();
-            for (var suffix : new String[]{"desc", "extra.0", "extra.1"}) {
-                assertFalse(translations.get("privatepatches.rule.playerRetentionMemoryLeakFix." + suffix)
-                        .getAsString().isBlank());
+            for (var rule : new String[]{"playerRetentionMemoryLeakFix", "fixBlueMap"}) {
+                for (var suffix : new String[]{"desc", "extra.0", "extra.1"}) {
+                    assertFalse(translations.get("privatepatches.rule." + rule + "." + suffix)
+                            .getAsString().isBlank());
+                }
             }
         }
     }
